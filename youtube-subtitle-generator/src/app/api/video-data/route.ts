@@ -7,6 +7,9 @@ import fs from "fs";
 const execPromise = promisify(exec);
 let isStartingServer = false;
 
+// 获取后端 API 地址
+const API_URL = process.env.BACKEND_API_URL || "http://localhost:8000";
+
 // 检查 Python API 服务器是否正在运行，如果没有则启动它
 async function ensureApiServerRunning() {
   // 如果已经有一个启动过程在进行，等待它完成
@@ -18,7 +21,7 @@ async function ensureApiServerRunning() {
 
   try {
     // 尝试访问 API 服务器
-    const response = await fetch("http://localhost:8000/docs", {
+    const response = await fetch(API_URL + "/docs", {
       method: "GET",
       // 设置较短的超时时间
       signal: AbortSignal.timeout(2000),
@@ -62,7 +65,7 @@ async function ensureApiServerRunning() {
     let serverRunning = false;
     for (let i = 0; i < 3; i++) {
       try {
-        const checkResponse = await fetch("http://localhost:8000/docs", {
+        const checkResponse = await fetch(API_URL + "/docs", {
           method: "GET",
           signal: AbortSignal.timeout(2000),
         });
@@ -115,15 +118,17 @@ async function fetchWithRetry(
 
 export async function POST(request: NextRequest) {
   try {
-    // 确保 API 服务器正在运行
-    await ensureApiServerRunning();
+    // 在生产环境中，我们不会尝试启动 API 服务器
+    if (process.env.NODE_ENV !== "production") {
+      await ensureApiServerRunning();
+    }
 
     // 从请求中获取数据
     const data = await request.json();
 
     // 转发请求到 Python API，使用带重试的 fetch
     const response = await fetchWithRetry(
-      "http://localhost:8000/video-data",
+      `${API_URL}/video-data`,
       {
         method: "POST",
         headers: {

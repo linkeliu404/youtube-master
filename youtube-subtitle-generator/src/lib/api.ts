@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = "/api";
+// 使用环境变量获取 API 地址
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export interface VideoData {
   title: string;

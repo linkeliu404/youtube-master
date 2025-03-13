@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// 获取后端 API 地址
+const API_URL = process.env.BACKEND_API_URL || "http://localhost:8000";
+
 // 带重试的 fetch 函数
 async function fetchWithRetry(
   url: string,
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 转发请求到 Python API，使用带重试的 fetch
     const response = await fetchWithRetry(
-      "http://localhost:8000/video-timestamps",
+      `${API_URL}/video-timestamps`,
       {
         method: "POST",
         headers: {

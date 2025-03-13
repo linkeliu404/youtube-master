@@ -125,3 +125,45 @@ youtube-subtitle-generator/
 ## 许可证
 
 MIT
+
+## 部署指南
+
+本项目分为前端和后端两部分，需要分别部署。
+
+### 部署后端 API 服务器
+
+1. 选择支持 Python 的云平台（如 Heroku、Railway、Render、PythonAnywhere 等）
+2. 部署 `api` 目录中的代码
+3. 确保安装了所有依赖：`pip install -r requirements.txt`
+4. 启动服务器：`python main.py`
+5. 记录下部署后的 API URL，如 `https://your-backend-api.com`
+
+### 部署前端到 Vercel
+
+1. Fork 或克隆本仓库到你的 GitHub 账户
+2. 在 Vercel 中导入该仓库
+3. 设置以下环境变量：
+   - `NEXT_PUBLIC_API_URL`: 后端 API 的公开地址（如 `https://your-backend-api.com`）
+   - `BACKEND_API_URL`: 后端 API 的地址（同上）
+4. 点击部署
+
+### 本地开发与生产环境的区别
+
+在本地开发时，前端会尝试自动启动后端 API 服务器。但在生产环境中，前端和后端是分开部署的，需要通过环境变量指定后端 API 的地址。
+
+## 故障排除
+
+如果遇到 API 服务器无法启动的问题，请尝试以下步骤：
+
+1. 确保已安装 Python 3.7+ 和 pip
+2. 手动安装依赖：
+   ```bash
+   cd api
+   pip install -r requirements.txt
+   ```
+3. 手动启动 API 服务器：
+   ```bash
+   cd api
+   python main.py
+   ```
+4. 检查端口 8000 是否已被占用，如果已被占用，可以修改 `api/main.py` 文件中的端口号
