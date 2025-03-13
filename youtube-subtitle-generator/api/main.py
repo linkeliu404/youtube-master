@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 from urllib.parse import urlparse, parse_qs, urlencode
 from urllib.request import urlopen
 from typing import Optional, List
@@ -8,6 +9,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+
+# 配置日志
+logging.basicConfig(level=logging.INFO, 
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
@@ -25,6 +31,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 class YouTubeTools:
@@ -141,17 +148,38 @@ class YouTubeRequest(BaseModel):
 @app.post("/video-data")
 async def get_video_data(request: YouTubeRequest):
     """Endpoint to get video metadata"""
-    return YouTubeTools.get_video_data(request.url)
+    logger.info(f"收到视频数据请求: {request.url}")
+    try:
+        result = YouTubeTools.get_video_data(request.url)
+        logger.info(f"视频数据请求成功: {request.url}")
+        return result
+    except Exception as e:
+        logger.error(f"视频数据请求失败: {request.url}, 错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/video-captions")
 async def get_video_captions(request: YouTubeRequest):
     """Endpoint to get video captions"""
-    return YouTubeTools.get_video_captions(request.url, request.languages)
+    logger.info(f"收到字幕请求: {request.url}, 语言: {request.languages}")
+    try:
+        result = YouTubeTools.get_video_captions(request.url, request.languages)
+        logger.info(f"字幕请求成功: {request.url}")
+        return result
+    except Exception as e:
+        logger.error(f"字幕请求失败: {request.url}, 错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/video-timestamps")
 async def get_video_timestamps(request: YouTubeRequest):
     """Endpoint to get video timestamps"""
-    return YouTubeTools.get_video_timestamps(request.url, request.languages)
+    logger.info(f"收到时间戳请求: {request.url}, 语言: {request.languages}")
+    try:
+        result = YouTubeTools.get_video_timestamps(request.url, request.languages)
+        logger.info(f"时间戳请求成功: {request.url}")
+        return result
+    except Exception as e:
+        logger.error(f"时间戳请求失败: {request.url}, 错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     # 使用环境变量为端口，默认为 8000
