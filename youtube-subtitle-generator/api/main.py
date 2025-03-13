@@ -121,7 +121,7 @@ class YouTubeTools:
                     status_code=404,
                     detail="This video does not have subtitles enabled. Please try another video or contact the video owner to enable subtitles."
                 )
-            raise HTTPException(status_code=500, detail=f"Error getting captions: {error_msg}")
+            raise HTTPException(status_code=500, detail=error_msg)
 
     @staticmethod
     def get_video_timestamps(url: str, languages: Optional[List[str]] = None) -> List[str]:
@@ -145,7 +145,13 @@ class YouTubeTools:
                 timestamps.append(f"{minutes}:{seconds:02d} - {line['text']}")
             return timestamps
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error generating timestamps: {str(e)}")
+            error_msg = str(e)
+            if "Subtitles are disabled" in error_msg:
+                raise HTTPException(
+                    status_code=404,
+                    detail="This video does not have subtitles enabled. Please try another video or contact the video owner to enable subtitles."
+                )
+            raise HTTPException(status_code=500, detail=error_msg)
 
 class YouTubeRequest(BaseModel):
     url: str

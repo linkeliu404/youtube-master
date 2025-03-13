@@ -56,16 +56,17 @@ export const getVideoCaptions = async (
   } catch (error) {
     console.error("Error fetching video captions:", error);
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+
+      if (status === 404) {
         throw new Error(
-          error.response.data.detail ||
-            "This video does not have subtitles enabled."
+          detail || "This video does not have subtitles enabled."
         );
       }
+
       console.error("服务器响应:", error.response?.data);
-      throw new Error(
-        error.response?.data?.detail || "Failed to fetch video captions"
-      );
+      throw new Error(detail || "Failed to fetch video captions");
     }
     throw error;
   }
@@ -80,8 +81,18 @@ export const getVideoTimestamps = async (
     return response.data;
   } catch (error) {
     console.error("Error fetching video timestamps:", error);
-    if (axios.isAxiosError(error) && error.response) {
-      console.error("服务器响应:", error.response.data);
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+
+      if (status === 404) {
+        throw new Error(
+          detail || "This video does not have subtitles enabled."
+        );
+      }
+
+      console.error("服务器响应:", error.response?.data);
+      throw new Error(detail || "Failed to fetch video timestamps");
     }
     throw error;
   }
