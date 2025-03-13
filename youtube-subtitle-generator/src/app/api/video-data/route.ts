@@ -30,7 +30,7 @@ async function ensureApiServerRunning() {
       console.log("API 服务器已经在运行");
       return;
     }
-  } catch (error) {
+  } catch (_) {
     console.log("API 服务器未运行，正在启动...");
   }
 
@@ -74,7 +74,7 @@ async function ensureApiServerRunning() {
           serverRunning = true;
           break;
         }
-      } catch (error) {
+      } catch (_) {
         console.log(`尝试 ${i + 1}/3 检查 API 服务器失败`);
       }
       await new Promise((resolve) => setTimeout(resolve, 2000));

@@ -1,0 +1,2 @@
+# 忽略 ESLint 错误
+.eslintrc* 
