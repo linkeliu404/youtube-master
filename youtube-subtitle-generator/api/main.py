@@ -115,7 +115,13 @@ class YouTubeTools:
                 return " ".join(line["text"] for line in captions)
             return "No captions found for video"
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error getting captions for video: {str(e)}")
+            error_msg = str(e)
+            if "Subtitles are disabled" in error_msg:
+                raise HTTPException(
+                    status_code=404,
+                    detail="This video does not have subtitles enabled. Please try another video or contact the video owner to enable subtitles."
+                )
+            raise HTTPException(status_code=500, detail=f"Error getting captions: {error_msg}")
 
     @staticmethod
     def get_video_timestamps(url: str, languages: Optional[List[str]] = None) -> List[str]:
