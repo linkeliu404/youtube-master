@@ -154,7 +154,7 @@ async def get_video_timestamps(request: YouTubeRequest):
     return YouTubeTools.get_video_timestamps(request.url, request.languages)
 
 if __name__ == "__main__":
-    # Use environment variable for port, default to 8000 if not set
+    # 使用环境变量为端口，默认为 8000 而不是 3000
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
     uvicorn.run(app, host=host, port=port)

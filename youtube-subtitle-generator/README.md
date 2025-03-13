@@ -40,11 +40,56 @@ pip install -r requirements.txt
 
 ### 运行应用程序
 
+有两种方式运行应用程序：
+
+#### 方式一：一键启动（推荐）
+
 ```bash
 npm run dev
 ```
 
-应用程序将在 http://localhost:3000 上运行。
+应用程序将在 http://localhost:3000 上运行，并在需要时自动启动 API 服务器。
+
+#### 方式二：分别启动前端和后端
+
+1. 启动 API 服务器：
+
+在 Linux/macOS 上：
+
+```bash
+./start-api-server.sh
+```
+
+在 Windows 上：
+
+```bash
+start-api-server.bat
+```
+
+2. 启动前端应用程序：
+
+```bash
+npm run dev
+```
+
+应用程序将在 http://localhost:3000 上运行，API 服务器将在 http://localhost:8000 上运行。
+
+### 故障排除
+
+如果遇到 API 服务器无法启动的问题，请尝试以下步骤：
+
+1. 确保已安装 Python 3.7+ 和 pip
+2. 手动安装依赖：
+   ```bash
+   cd api
+   pip install -r requirements.txt
+   ```
+3. 手动启动 API 服务器：
+   ```bash
+   cd api
+   python main.py
+   ```
+4. 检查端口 8000 是否已被占用，如果已被占用，可以修改 `api/main.py` 文件中的端口号
 
 ## 项目结构
 
