@@ -1,6 +1,8 @@
 import json
 import os
 import logging
+import re
+import requests
 from urllib.parse import urlparse, parse_qs, urlencode
 from urllib.request import urlopen
 from typing import Optional, List
@@ -113,8 +115,19 @@ class YouTubeTools:
                 languages = ["en", "zh", "zh-Hans", "zh-Hant", "zh-CN", "zh-TW", "ja", "ko", "es", "fr", "de", "ru", "pt", "it"]
                 logger.info(f"未指定语言，将尝试以下语言: {languages}")
             
+            # 首先尝试直接从 YouTube 获取字幕
             try:
-                # 首先尝试指定语言
+                logger.info("尝试直接从 YouTube 获取字幕")
+                captions_text = YouTubeTools.get_captions_direct(video_id)
+                if captions_text:
+                    logger.info("成功直接从 YouTube 获取字幕")
+                    return captions_text
+                logger.warning("直接获取字幕失败，尝试使用 youtube_transcript_api")
+            except Exception as direct_e:
+                logger.warning(f"直接获取字幕失败: {str(direct_e)}，尝试使用 youtube_transcript_api")
+            
+            try:
+                # 尝试使用 youtube_transcript_api
                 logger.info(f"尝试使用指定语言获取字幕: {languages}")
                 captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
                 logger.info(f"成功获取字幕，语言: {languages}")
@@ -160,6 +173,51 @@ class YouTubeTools:
             raise HTTPException(status_code=500, detail=error_msg)
 
     @staticmethod
+    def get_captions_direct(video_id: str) -> Optional[str]:
+        """直接从 YouTube 获取字幕，不使用第三方库"""
+        try:
+            # 获取视频页面
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            response = requests.get(url, headers=headers)
+            html_content = response.text
+            
+            # 尝试提取字幕 URL
+            caption_url_match = re.search(r'"captionTracks":\[(.*?)\]', html_content)
+            if not caption_url_match:
+                logger.warning("未找到字幕轨道信息")
+                return None
+                
+            caption_data = caption_url_match.group(1)
+            base_url_match = re.search(r'"baseUrl":"(.*?)"', caption_data)
+            
+            if not base_url_match:
+                logger.warning("未找到字幕 URL")
+                return None
+                
+            caption_url = base_url_match.group(1).replace('\\u0026', '&')
+            
+            # 获取字幕内容
+            caption_response = requests.get(caption_url)
+            caption_xml = caption_response.text
+            
+            # 解析 XML 提取文本
+            text_parts = re.findall(r'<text[^>]*>(.*?)</text>', caption_xml)
+            if not text_parts:
+                logger.warning("未找到字幕文本")
+                return None
+                
+            # 清理 HTML 实体
+            cleaned_parts = [part.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"') for part in text_parts]
+            
+            return " ".join(cleaned_parts)
+        except Exception as e:
+            logger.error(f"直接获取字幕失败: {str(e)}")
+            return None
+
+    @staticmethod
     def get_video_timestamps(url: str, languages: Optional[List[str]] = None) -> List[str]:
         """Generate timestamps for a YouTube video based on captions."""
         if not url:
@@ -176,13 +234,24 @@ class YouTubeTools:
             # 记录更详细的信息
             logger.info(f"尝试获取视频 ID: {video_id} 的时间戳")
             
+            # 首先尝试直接从 YouTube 获取字幕
+            try:
+                logger.info("尝试直接从 YouTube 获取字幕用于时间戳")
+                captions_text = YouTubeTools.get_captions_direct_with_timestamps(video_id)
+                if captions_text:
+                    logger.info("成功直接从 YouTube 获取带时间戳的字幕")
+                    return captions_text
+                logger.warning("直接获取带时间戳的字幕失败，尝试使用 youtube_transcript_api")
+            except Exception as direct_e:
+                logger.warning(f"直接获取带时间戳的字幕失败: {str(direct_e)}，尝试使用 youtube_transcript_api")
+            
             # 如果没有指定语言，尝试多种常见语言
             if not languages:
                 languages = ["en", "zh", "zh-Hans", "zh-Hant", "zh-CN", "zh-TW", "ja", "ko", "es", "fr", "de", "ru", "pt", "it"]
                 logger.info(f"未指定语言，将尝试以下语言: {languages}")
             
             try:
-                # 首先尝试指定语言
+                # 尝试使用 youtube_transcript_api
                 logger.info(f"尝试使用指定语言获取字幕: {languages}")
                 captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
                 logger.info(f"成功获取字幕，语言: {languages}")
@@ -229,6 +298,57 @@ class YouTubeTools:
                     detail="This video does not have subtitles enabled. Please try another video or contact the video owner to enable subtitles."
                 )
             raise HTTPException(status_code=500, detail=error_msg)
+
+    @staticmethod
+    def get_captions_direct_with_timestamps(video_id: str) -> Optional[List[str]]:
+        """直接从 YouTube 获取带时间戳的字幕，不使用第三方库"""
+        try:
+            # 获取视频页面
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            response = requests.get(url, headers=headers)
+            html_content = response.text
+            
+            # 尝试提取字幕 URL
+            caption_url_match = re.search(r'"captionTracks":\[(.*?)\]', html_content)
+            if not caption_url_match:
+                logger.warning("未找到字幕轨道信息")
+                return None
+                
+            caption_data = caption_url_match.group(1)
+            base_url_match = re.search(r'"baseUrl":"(.*?)"', caption_data)
+            
+            if not base_url_match:
+                logger.warning("未找到字幕 URL")
+                return None
+                
+            caption_url = base_url_match.group(1).replace('\\u0026', '&')
+            
+            # 获取字幕内容
+            caption_response = requests.get(caption_url)
+            caption_xml = caption_response.text
+            
+            # 解析 XML 提取文本和时间
+            timestamps = []
+            pattern = re.compile(r'<text start="([\d\.]+)"[^>]*>(.*?)</text>')
+            matches = pattern.findall(caption_xml)
+            
+            for start, text in matches:
+                # 清理 HTML 实体
+                cleaned_text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
+                
+                # 转换时间为分:秒格式
+                start_seconds = float(start)
+                minutes, seconds = divmod(int(start_seconds), 60)
+                
+                timestamps.append(f"{minutes}:{seconds:02d} - {cleaned_text}")
+            
+            return timestamps
+        except Exception as e:
+            logger.error(f"直接获取带时间戳的字幕失败: {str(e)}")
+            return None
 
 class YouTubeRequest(BaseModel):
     url: str
