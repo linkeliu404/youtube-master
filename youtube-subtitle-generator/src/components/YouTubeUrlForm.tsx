@@ -89,6 +89,27 @@ export function YouTubeUrlForm({ onSubmit, isLoading }: YouTubeUrlFormProps) {
                 <li>确保视频已启用字幕功能</li>
                 <li>如果遇到错误，请尝试其他视频</li>
                 <li>某些视频可能因版权或设置原因无法获取字幕</li>
+                <li>
+                  推荐使用 TED、教育类或官方频道的视频，这些视频通常有高质量字幕
+                </li>
+                <li>
+                  <strong>测试视频推荐：</strong>{" "}
+                  <a
+                    href="https://www.youtube.com/watch?v=UF8uR6Z6KLc"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      form.setValue(
+                        "url",
+                        "https://www.youtube.com/watch?v=UF8uR6Z6KLc"
+                      );
+                    }}
+                  >
+                    点击填入测试视频
+                  </a>
+                </li>
               </ul>
             </div>
           </form>

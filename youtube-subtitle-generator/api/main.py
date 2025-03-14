@@ -105,17 +105,53 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            captions = None
-            if languages:
+            # 记录更详细的信息
+            logger.info(f"尝试获取视频 ID: {video_id} 的字幕")
+            
+            # 如果没有指定语言，尝试多种常见语言
+            if not languages:
+                languages = ["en", "zh", "zh-Hans", "zh-Hant", "zh-CN", "zh-TW", "ja", "ko", "es", "fr", "de", "ru", "pt", "it"]
+                logger.info(f"未指定语言，将尝试以下语言: {languages}")
+            
+            try:
+                # 首先尝试指定语言
+                logger.info(f"尝试使用指定语言获取字幕: {languages}")
                 captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
-            else:
-                captions = YouTubeTranscriptApi.get_transcript(video_id)
+                logger.info(f"成功获取字幕，语言: {languages}")
+            except Exception as e:
+                # 如果指定语言失败，尝试获取任何可用的字幕
+                logger.warning(f"使用指定语言获取字幕失败: {str(e)}，尝试获取任何可用的字幕")
+                try:
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    logger.info(f"可用的字幕列表: {[tr.language_code for tr in transcript_list]}")
+                    
+                    # 获取第一个可用的字幕
+                    transcript = transcript_list.find_transcript(languages)
+                    if not transcript:
+                        # 如果找不到指定语言，获取自动生成的字幕
+                        transcript = next(transcript_list._manually_created_transcripts.values().__iter__(), None)
+                        if not transcript:
+                            # 如果没有手动创建的字幕，获取自动生成的字幕
+                            transcript = next(transcript_list._generated_transcripts.values().__iter__(), None)
+                    
+                    if transcript:
+                        logger.info(f"找到可用字幕，语言: {transcript.language_code}")
+                        captions = transcript.fetch()
+                    else:
+                        raise Exception("No available transcripts found")
+                except Exception as inner_e:
+                    logger.error(f"获取任何可用字幕失败: {str(inner_e)}")
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"This video does not have available subtitles. Error: {str(inner_e)}"
+                    )
             
             if captions:
                 return " ".join(line["text"] for line in captions)
             return "No captions found for video"
         except Exception as e:
             error_msg = str(e)
+            logger.error(f"获取字幕时出错: {error_msg}")
             if "Subtitles are disabled" in error_msg:
                 raise HTTPException(
                     status_code=404,
@@ -137,7 +173,47 @@ class YouTubeTools:
             raise HTTPException(status_code=400, detail="Error getting video ID from URL")
 
         try:
-            captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages or ["en"])
+            # 记录更详细的信息
+            logger.info(f"尝试获取视频 ID: {video_id} 的时间戳")
+            
+            # 如果没有指定语言，尝试多种常见语言
+            if not languages:
+                languages = ["en", "zh", "zh-Hans", "zh-Hant", "zh-CN", "zh-TW", "ja", "ko", "es", "fr", "de", "ru", "pt", "it"]
+                logger.info(f"未指定语言，将尝试以下语言: {languages}")
+            
+            try:
+                # 首先尝试指定语言
+                logger.info(f"尝试使用指定语言获取字幕: {languages}")
+                captions = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+                logger.info(f"成功获取字幕，语言: {languages}")
+            except Exception as e:
+                # 如果指定语言失败，尝试获取任何可用的字幕
+                logger.warning(f"使用指定语言获取字幕失败: {str(e)}，尝试获取任何可用的字幕")
+                try:
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    logger.info(f"可用的字幕列表: {[tr.language_code for tr in transcript_list]}")
+                    
+                    # 获取第一个可用的字幕
+                    transcript = transcript_list.find_transcript(languages)
+                    if not transcript:
+                        # 如果找不到指定语言，获取自动生成的字幕
+                        transcript = next(transcript_list._manually_created_transcripts.values().__iter__(), None)
+                        if not transcript:
+                            # 如果没有手动创建的字幕，获取自动生成的字幕
+                            transcript = next(transcript_list._generated_transcripts.values().__iter__(), None)
+                    
+                    if transcript:
+                        logger.info(f"找到可用字幕，语言: {transcript.language_code}")
+                        captions = transcript.fetch()
+                    else:
+                        raise Exception("No available transcripts found")
+                except Exception as inner_e:
+                    logger.error(f"获取任何可用字幕失败: {str(inner_e)}")
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"This video does not have available subtitles. Error: {str(inner_e)}"
+                    )
+            
             timestamps = []
             for line in captions:
                 start = int(line["start"])
@@ -146,6 +222,7 @@ class YouTubeTools:
             return timestamps
         except Exception as e:
             error_msg = str(e)
+            logger.error(f"生成时间戳时出错: {error_msg}")
             if "Subtitles are disabled" in error_msg:
                 raise HTTPException(
                     status_code=404,

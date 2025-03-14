@@ -74,14 +74,22 @@ export const getVideoCaptions = async (
       const status = error.response?.status;
       const detail = error.response?.data?.detail;
 
+      console.error("服务器响应:", error.response?.data);
+
       if (status === 404) {
         throw new Error(
-          detail || "This video does not have subtitles enabled."
+          detail ||
+            "该视频没有启用字幕功能。请尝试其他视频或联系视频所有者启用字幕。"
         );
+      } else if (status === 400) {
+        throw new Error(detail || "无效的 YouTube 链接");
+      } else if (error.code === "ECONNABORTED") {
+        throw new Error("请求超时，请检查您的网络连接或稍后重试");
+      } else if (error.code === "ERR_NETWORK") {
+        throw new Error("网络错误，无法连接到服务器");
+      } else {
+        throw new Error(detail || "获取字幕失败，请稍后重试");
       }
-
-      console.error("服务器响应:", error.response?.data);
-      throw new Error(detail || "Failed to fetch video captions");
     }
     throw error;
   }
@@ -100,14 +108,22 @@ export const getVideoTimestamps = async (
       const status = error.response?.status;
       const detail = error.response?.data?.detail;
 
+      console.error("服务器响应:", error.response?.data);
+
       if (status === 404) {
         throw new Error(
-          detail || "This video does not have subtitles enabled."
+          detail ||
+            "该视频没有启用字幕功能。请尝试其他视频或联系视频所有者启用字幕。"
         );
+      } else if (status === 400) {
+        throw new Error(detail || "无效的 YouTube 链接");
+      } else if (error.code === "ECONNABORTED") {
+        throw new Error("请求超时，请检查您的网络连接或稍后重试");
+      } else if (error.code === "ERR_NETWORK") {
+        throw new Error("网络错误，无法连接到服务器");
+      } else {
+        throw new Error(detail || "获取时间戳失败，请稍后重试");
       }
-
-      console.error("服务器响应:", error.response?.data);
-      throw new Error(detail || "Failed to fetch video timestamps");
     }
     throw error;
   }
