@@ -45,9 +45,35 @@ export default function Home() {
       setTimestamps(timestampsResult);
 
       toast.success("字幕生成成功！");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
-      toast.error("获取视频数据时出错");
+
+      // 显示更具体的错误信息
+      if (error.message) {
+        if (
+          error.message.includes("subtitles") ||
+          error.message.includes("字幕")
+        ) {
+          toast.error(`无法获取字幕: ${error.message}`, {
+            duration: 5000,
+          });
+        } else if (
+          error.message.includes("network") ||
+          error.message.includes("timeout")
+        ) {
+          toast.error(`网络错误: 请检查您的网络连接或API服务器是否可用`, {
+            duration: 5000,
+          });
+        } else {
+          toast.error(`处理失败: ${error.message}`, {
+            duration: 5000,
+          });
+        }
+      } else {
+        toast.error("获取视频数据时出错，请稍后重试", {
+          duration: 5000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }

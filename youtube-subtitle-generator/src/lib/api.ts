@@ -39,8 +39,23 @@ export const getVideoData = async (
     return response.data;
   } catch (error) {
     console.error("Error fetching video data:", error);
-    if (axios.isAxiosError(error) && error.response) {
-      console.error("服务器响应:", error.response.data);
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+
+      console.error("服务器响应:", error.response?.data);
+
+      if (error.code === "ECONNABORTED") {
+        throw new Error("请求超时，请检查您的网络连接或稍后重试");
+      } else if (error.code === "ERR_NETWORK") {
+        throw new Error("网络错误，无法连接到服务器");
+      } else if (status === 404) {
+        throw new Error(detail || "找不到视频信息");
+      } else if (status === 400) {
+        throw new Error(detail || "无效的 YouTube 链接");
+      } else {
+        throw new Error(detail || "获取视频数据失败");
+      }
     }
     throw error;
   }

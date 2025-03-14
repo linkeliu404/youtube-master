@@ -82,6 +82,15 @@ export function YouTubeUrlForm({ onSubmit, isLoading }: YouTubeUrlFormProps) {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "处理中..." : "生成字幕"}
             </Button>
+
+            <div className="text-sm text-muted-foreground mt-4">
+              <p>提示：</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>确保视频已启用字幕功能</li>
+                <li>如果遇到错误，请尝试其他视频</li>
+                <li>某些视频可能因版权或设置原因无法获取字幕</li>
+              </ul>
+            </div>
           </form>
         </Form>
       </CardContent>
